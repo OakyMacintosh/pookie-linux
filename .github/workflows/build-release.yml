@@ -1,0 +1,54 @@
+name: Build Distro ISO
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Install Buildroot dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gcc g++ make unzip cpio bc git \
+            libncurses5-dev libncursesw5-dev \
+            python3 wget rsync file
+
+      - name: Cache Buildroot downloads
+        uses: actions/cache@v4
+        with:
+          path: buildroot/dl
+          key: ${{ runner.os }}-buildroot-dl
+          restore-keys: |
+            ${{ runner.os }}-buildroot-dl
+
+      - name: Build system
+        run: |
+          make -C buildroot BR2_EXTERNAL="$(pwd)/br-external" defconfig
+          make -C buildroot
+
+      - name: Find ISO
+        id: findiso
+        run: |
+          ISO_PATH=$(find buildroot/output/images -type f -name "*.iso" | head -n 1)
+          if [ -z "$ISO_PATH" ]; then
+            echo "No ISO found!"
+            exit 1
+          fi
+          echo "iso=$ISO_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ steps.findiso.outputs.iso }}
