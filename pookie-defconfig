@@ -1,0 +1,2 @@
+# Disable Perl to stop musl memrchr failures
+BR2_PACKAGE_PERL=n
