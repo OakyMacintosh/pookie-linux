@@ -44,7 +44,8 @@ BR2_ARCH="i686"
 BR2_ENDIAN="LITTLE"
 BR2_GCC_TARGET_TUNE="i686"
 BR2_GCC_TARGET_ARCH="i686"
-
+# Disable Perl to stop musl memrchr failures
+BR2_PACKAGE_PERL=n
 #
 # Target options
 #
